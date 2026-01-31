@@ -12,7 +12,7 @@ import {
   type ResourceConfig 
 } from "@x402/core/server";
 import { registerExactEvmScheme } from "@x402/evm/exact/server";
-import { bazaarExtension } from "@x402/extensions/bazaar";
+import { withBazaar } from "@x402/extensions/bazaar";
 import type { Request, Response, NextFunction } from "express";
 import { config } from "../config/index.js";
 
@@ -67,7 +67,7 @@ export function createAuditResourceConfig(tier: AuditTier = "quick"): ResourceCo
     description: `SkillGuard security audit (${tier} tier)`,
     mimeType: "application/json",
     extensions: {
-      bazaar: bazaarExtension({
+      bazaar: withBazaar({
         discoverable: true,
         category: "security",
         tags: ["audit", "skills", "agents", "trust", "yara", "malware"],
