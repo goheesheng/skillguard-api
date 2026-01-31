@@ -1,0 +1,92 @@
+import { Router } from "express";
+import { z } from "zod";
+import { nanoid } from "nanoid";
+import { AppError } from "../middleware/errorHandler.js";
+import { auditSkill } from "../services/auditEngine/index.js";
+import { config } from "../config/index.js";
+import { x402AuditMiddleware, settlePayment } from "../middleware/x402.js";
+import type { AuditRequest, AuditResponse, AuditTier } from "../types/api.js";
+
+const router = Router();
+
+// Request validation schema
+const auditRequestSchema = z.object({
+  skill_url: z.string().url().optional(),
+  skill_content: z.string().max(config.MAX_SKILL_SIZE).optional(),
+  tier: z.enum(["quick", "standard", "deep"]).default("quick"),
+  format: z.enum(["json", "markdown"]).default("json"),
+}).refine(
+  (data) => data.skill_url || data.skill_content,
+  { message: "Either skill_url or skill_content is required" }
+);
+
+// Fetch skill from URL
+async function fetchSkillContent(url: string): Promise<string> {
+  if (!url.startsWith("https://")) {
+    throw new AppError("Only HTTPS URLs are allowed", "INVALID_URL", 400);
+  }
+  
+  const response = await fetch(url, {
+    headers: { "User-Agent": "SkillGuard/0.1" },
+  });
+  
+  if (!response.ok) {
+    throw new AppError(`Failed to fetch skill: ${response.status}`, "FETCH_ERROR", 400);
+  }
+  
+  const content = await response.text();
+  
+  if (content.length > config.MAX_SKILL_SIZE) {
+    throw new AppError("Skill content exceeds maximum size", "SKILL_TOO_LARGE", 413);
+  }
+  
+  return content;
+}
+
+// Apply x402 payment middleware to the audit endpoint
+router.post("/audit", x402AuditMiddleware(), async (req, res, next) => {
+  try {
+    // Validate request
+    const parseResult = auditRequestSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      throw new AppError(
+        parseResult.error.issues[0].message,
+        "VALIDATION_ERROR",
+        400
+      );
+    }
+    
+    const { skill_url, skill_content, tier } = parseResult.data;
+    
+    // Get skill content
+    let content: string;
+    if (skill_content) {
+      content = skill_content;
+    } else if (skill_url) {
+      content = await fetchSkillContent(skill_url);
+    } else {
+      throw new AppError("No skill content provided", "MISSING_CONTENT", 400);
+    }
+    
+    // Run audit
+    const auditResult = await auditSkill(content, tier);
+    
+    // Build response
+    const response: AuditResponse = {
+      ...auditResult,
+      audit_id: nanoid(12),
+      timestamp: new Date().toISOString(),
+      tier,
+    };
+    
+    // Send response
+    res.json(response);
+    
+    // Settle payment after successful response
+    await settlePayment(res);
+  } catch (error) {
+    next(error);
+  }
+});
+
+export default router;
