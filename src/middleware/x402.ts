@@ -47,15 +47,15 @@ export function createPaymentConfig(tier: AuditTier = "quick") {
  * Express middleware factory for x402-protected routes
  * Uses the standard @x402/express middleware
  */
-export function createX402Middleware() {
+export function createX402Middleware(): any {
   return paymentMiddleware(
-    config.X402_PAY_TO_ADDRESS,
+    config.X402_PAY_TO_ADDRESS as any,
     {
       "POST /audit": createPaymentConfig("quick"),
-    },
+    } as any,
     {
       url: config.X402_FACILITATOR_URL,
-    }
+    } as any
   );
 }
 

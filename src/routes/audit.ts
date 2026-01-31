@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router } from "express";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 import { AppError } from "../middleware/errorHandler.js";
@@ -26,15 +26,15 @@ async function fetchSkillContent(url: string): Promise<string> {
     throw new AppError("Only HTTPS URLs are allowed", "INVALID_URL", 400);
   }
   
-  const response = await fetch(url, {
+  const fetchResponse = await fetch(url, {
     headers: { "User-Agent": "SkillGuard/0.1" },
   });
   
-  if (!response.ok) {
-    throw new AppError(`Failed to fetch skill: ${response.status}`, "FETCH_ERROR", 400);
+  if (!fetchResponse.ok) {
+    throw new AppError(`Failed to fetch skill: ${fetchResponse.status}`, "FETCH_ERROR", 400);
   }
   
-  const content = await response.text();
+  const content = await fetchResponse.text();
   
   if (content.length > config.MAX_SKILL_SIZE) {
     throw new AppError("Skill content exceeds maximum size", "SKILL_TOO_LARGE", 413);
@@ -47,7 +47,7 @@ async function fetchSkillContent(url: string): Promise<string> {
 router.use(createX402Middleware());
 
 // GET /audit - Return pricing info
-router.get("/audit", (_req: Request, res: Response) => {
+router.get("/audit", (_req: any, res: any) => {
   res.json({
     message: "SkillGuard Audit API",
     method: "POST",
@@ -57,7 +57,7 @@ router.get("/audit", (_req: Request, res: Response) => {
 });
 
 // POST /audit - Run audit (protected by x402)
-router.post("/audit", async (req: Request, res: Response, next: NextFunction) => {
+router.post("/audit", async (req: any, res: any, next: any) => {
   try {
     // Validate request
     const parseResult = auditRequestSchema.safeParse(req.body);

@@ -1,4 +1,3 @@
-import type { Request, Response, NextFunction, ErrorRequestHandler } from "express";
 import { logger } from "../utils/logger.js";
 
 export class AppError extends Error {
@@ -13,11 +12,11 @@ export class AppError extends Error {
   }
 }
 
-export const errorHandler: ErrorRequestHandler = (
+export const errorHandler = (
   err: Error,
-  req: Request,
-  res: Response,
-  _next: NextFunction
+  req: any,
+  res: any,
+  _next: any
 ) => {
   logger.error("Request error:", err.message, req.path);
   

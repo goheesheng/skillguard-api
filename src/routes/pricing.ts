@@ -1,10 +1,10 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
 import { config } from "../config/index.js";
 import type { PricingResponse } from "../types/api.js";
 
 const router = Router();
 
-router.get("/pricing", (_req: Request, res: Response) => {
+router.get("/pricing", (_req: any, res: any) => {
   const response: PricingResponse = {
     tiers: [
       {

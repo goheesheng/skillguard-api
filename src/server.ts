@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction } from "express";
+import express from "express";
 import { logger } from "./utils/logger.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import healthRouter from "./routes/health.js";
@@ -12,13 +12,13 @@ export function createServer() {
   app.use(express.json({ limit: "2mb" }));
   
   // Request logging
-  app.use((req: Request, res: Response, next: NextFunction) => {
+  app.use((req: any, res: any, next: any) => {
     logger.info(`${req.method} ${req.path}`);
     next();
   });
   
   // CORS
-  app.use((req: Request, res: Response, next: NextFunction) => {
+  app.use((req: any, res: any, next: any) => {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Payment");
     res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
