@@ -10,10 +10,11 @@ const envSchema = z.object({
   PORT: z.string().default("3000").transform(Number),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   
-  // x402
+  // x402 - MAINNET CONFIG
   X402_PAY_TO_ADDRESS: z.string().min(1),
   X402_FACILITATOR_URL: z.string().url().default("https://api.cdp.coinbase.com/platform/v2/x402"),
-  X402_NETWORK: z.string().default("eip155:8453"),
+  // Force Base Mainnet - hardcoded to ensure mainnet payments
+  X402_NETWORK: z.string().transform(() => "eip155:8453"),
   
   // Pricing (USDC atomic units, 6 decimals)
   PRICE_QUICK: z.string().default("50000").transform(Number),
