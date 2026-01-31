@@ -1,5 +1,4 @@
-import express from "express";
-import pinoHttp from "pino-http";
+import express, { Request, Response, NextFunction } from "express";
 import { logger } from "./utils/logger.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import healthRouter from "./routes/health.js";
@@ -11,15 +10,21 @@ export function createServer() {
   
   // Middleware
   app.use(express.json({ limit: "2mb" }));
-  app.use(pinoHttp({ logger }));
+  
+  // Request logging
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    logger.info(`${req.method} ${req.path}`);
+    next();
+  });
   
   // CORS
-  app.use((req, res, next) => {
+  app.use((req: Request, res: Response, next: NextFunction) => {
     res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Payment-Signature, Payment-Required");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Payment");
     res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     if (req.method === "OPTIONS") {
-      return res.sendStatus(200);
+      res.sendStatus(200);
+      return;
     }
     next();
   });

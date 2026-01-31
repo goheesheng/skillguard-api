@@ -1,6 +1,5 @@
-import { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction, ErrorRequestHandler } from "express";
 import { logger } from "../utils/logger.js";
-import type { ErrorResponse } from "../types/api.js";
 
 export class AppError extends Error {
   constructor(
@@ -14,20 +13,21 @@ export class AppError extends Error {
   }
 }
 
-export function errorHandler(
+export const errorHandler: ErrorRequestHandler = (
   err: Error,
   req: Request,
-  res: Response<ErrorResponse>,
-  next: NextFunction
-) {
-  logger.error({ err, path: req.path }, "Request error");
+  res: Response,
+  _next: NextFunction
+) => {
+  logger.error("Request error:", err.message, req.path);
   
   if (err instanceof AppError) {
-    return res.status(err.statusCode).json({
+    res.status(err.statusCode).json({
       error: err.message,
       code: err.code,
       details: err.details,
     });
+    return;
   }
   
   // Generic error
@@ -35,4 +35,4 @@ export function errorHandler(
     error: "Internal server error",
     code: "INTERNAL_ERROR",
   });
-}
+};

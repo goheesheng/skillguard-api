@@ -1,11 +1,11 @@
-import { Router } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 import { AppError } from "../middleware/errorHandler.js";
 import { auditSkill } from "../services/auditEngine/index.js";
 import { config } from "../config/index.js";
-import { x402AuditMiddleware, settlePayment } from "../middleware/x402.js";
-import type { AuditRequest, AuditResponse, AuditTier } from "../types/api.js";
+import { createX402Middleware, getPricingInfo } from "../middleware/x402.js";
+import type { AuditResponse } from "../types/api.js";
 
 const router = Router();
 
@@ -44,7 +44,20 @@ async function fetchSkillContent(url: string): Promise<string> {
 }
 
 // Apply x402 payment middleware to the audit endpoint
-router.post("/audit", x402AuditMiddleware(), async (req, res, next) => {
+router.use(createX402Middleware());
+
+// GET /audit - Return pricing info
+router.get("/audit", (_req: Request, res: Response) => {
+  res.json({
+    message: "SkillGuard Audit API",
+    method: "POST",
+    pricing: getPricingInfo(),
+    payment: "x402 - Include X-Payment header with payment proof",
+  });
+});
+
+// POST /audit - Run audit (protected by x402)
+router.post("/audit", async (req: Request, res: Response, next: NextFunction) => {
   try {
     // Validate request
     const parseResult = auditRequestSchema.safeParse(req.body);
@@ -81,9 +94,6 @@ router.post("/audit", x402AuditMiddleware(), async (req, res, next) => {
     
     // Send response
     res.json(response);
-    
-    // Settle payment after successful response
-    await settlePayment(res);
   } catch (error) {
     next(error);
   }
