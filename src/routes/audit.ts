@@ -26,15 +26,15 @@ async function fetchSkillContent(url: string): Promise<string> {
     throw new AppError("Only HTTPS URLs are allowed", "INVALID_URL", 400);
   }
   
-  const fetchResponse = await fetch(url, {
+  const fetchResult: any = await fetch(url, {
     headers: { "User-Agent": "SkillGuard/0.1" },
   });
   
-  if (!fetchResponse.ok) {
-    throw new AppError(`Failed to fetch skill: ${fetchResponse.status}`, "FETCH_ERROR", 400);
+  if (!fetchResult.ok) {
+    throw new AppError(`Failed to fetch skill: ${fetchResult.status}`, "FETCH_ERROR", 400);
   }
   
-  const content = await fetchResponse.text();
+  const content = await fetchResult.text();
   
   if (content.length > config.MAX_SKILL_SIZE) {
     throw new AppError("Skill content exceeds maximum size", "SKILL_TOO_LARGE", 413);
